@@ -1,0 +1,36 @@
+#!/bin/bash
+
+REPO=""
+
+if [ -z "$REPO" ]; then
+  echo "Error: You need to edit this script to set the repository (REPO)"
+  echo "   ex: REPO=\"git.cbxt.net:/var/git/bel.git\""
+  exit 1
+fi
+
+if [ -z "$1" ]; then
+  echo "Usage: $0 tag"
+  exit 1
+fi
+
+TAG="$1"
+DIR="./$TAG"
+
+# empty directory ok, everything else, not so much.
+if [ -a "$DIR" ]; then
+  echo "Error: $DIR already exists - please clear and re-run"
+  exit 1
+fi
+
+# do the actual git export
+mkdir $DIR
+git archive --remote $REPO $TAG | tar -x -C $DIR
+
+if [ $? -ne 0 ]; then
+  echo "Error accessing $TAG in $REPO"
+  $(rm -rf $DIR)
+  exit 1
+else
+  echo "Exported $TAG to $DIR"
+fi
+
