@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DEBUG=0
+USER='mike'
+
+if [ `whoami` != "$USER" ]; then
+  sudo -u $USER "$0"
+  exit
+fi
+
+GIT_DIR=/var/git
+
+for repo in `ls $GIT_DIR`; do
+  test "$repo" = "README" && continue
+
+  test $DEBUG -ne 0 && echo "pushing $GIT_DIR/$repo"
+  cd "$GIT_DIR/$repo"
+  git push -q backup
+done
+
