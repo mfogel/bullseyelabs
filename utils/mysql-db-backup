@@ -1,0 +1,59 @@
+#!/bin/sh
+
+DEBUG=0
+USER='mike'
+
+# if I'm not mike, run me again as mike!
+if [ `whoami` != "$USER" ]; then
+  sudo -u $USER "$0"
+  exit
+fi
+
+TODAY=`date +%Y-%m-%d`
+
+# TODO: fill these in
+MYSQL_USER='..._live'
+MYSQL_PASS=
+MYSQL_DB='..._live'
+LOCAL_DIR='/tmp/...-db-backup'
+BACKUP_DIR='~/...-db-backup'
+
+BACKUP_USER='mikef'
+BACKUP_SERVER='dh.cbxt.net'
+BACKUP_DEST="${BACKUP_USER}@${BACKUP_SERVER}:${BACKUP_DIR}/"
+
+mkdir -p $LOCAL_DIR
+
+# find the youngest mysqldump in that directory
+LAST_MYSQLDUMP_GZ=`ls -c ${LOCAL_DIR}/ | grep '\.mysqldump\.gz$' | head -n 1`
+LAST_MYSQLDUMP_GZ="$LOCAL_DIR/$LAST_MYSQLDUMP_GZ"
+
+# do the mysqldump
+MYSQLDUMP_CMD="mysqldump --dump-date=FALSE -u $MYSQL_USER -p$MYSQL_PASS $MYSQL_DB"
+MYSQLDUMP_TODAY="$LOCAL_DIR/$TODAY.mysqldump"
+$MYSQLDUMP_CMD > $MYSQLDUMP_TODAY
+
+# -n: do not keep original filename and ts in compressed file
+gzip -n --best $MYSQLDUMP_TODAY
+TODAY_MYSQLDUMP_GZ="${MYSQLDUMP_TODAY}.gz"
+
+if [ -f "$LAST_MYSQLDUMP_GZ" ]; then
+  test $DEBUG -ne 0 && echo "last mysqldump found: $LAST_MYSQLDUMP_GZ"
+  # if they're different, keep the new one.  else, keep the older one.
+  # this is clearer because then what's left here will also be on the backup
+  # machine.
+  cmp -s $LAST_MYSQLDUMP_GZ $TODAY_MYSQLDUMP_GZ
+  if [ $? -eq 0 ]; then
+    test $DEBUG -ne 0 && echo "today's dump is the same"
+    rm $TODAY_MYSQLDUMP_GZ
+  else
+    test $DEBUG -ne 0 && echo "today's dump differs"
+    rm $LAST_MYSQLDUMP_GZ
+  fi
+fi
+
+if [ -f $TODAY_MYSQLDUMP_GZ ]; then
+  test $DEBUG -ne 0 && echo "rsync'ing today's dump over"
+  rsync -a $TODAY_MYSQLDUMP_GZ $BACKUP_DEST
+fi
+
