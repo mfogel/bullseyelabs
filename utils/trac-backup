@@ -37,13 +37,19 @@ for repo in `ls $TRAC_DIR`; do
   fi
 done
 
-# compress backup files first
-test $DEBUG -ne 0 && echo "compressing backup files"
-gzip --best ${TMP_DIR}/*
+if [ -n "$(ls -A ${TMP_DIR})" ]; then
 
-# rsync anything in the backup dir over
-test $DEBUG -ne 0 && echo "rsync'ing files over"
-rsync -a --remove-source-files ${TMP_DIR}/* ${BACKUP_USER}@${BACKUP_SERVER}:${BACKUP_DIR}/
+    # compress backup files first
+    test $DEBUG -ne 0 && echo "compressing backup files"
+    gzip --best ${TMP_DIR}/*
+
+    # rsync anything in the backup dir over
+    test $DEBUG -ne 0 && echo "rsync'ing files over"
+    rsync -a --remove-source-files ${TMP_DIR}/* ${BACKUP_USER}@${BACKUP_SERVER}:${BACKUP_DIR}/
+
+else
+    test $DEBUG -ne 0 && echo "no changes to backup, nothing to rysnc over"
+fi
 
 # cleanup, dir should be empty
 test $DEBUG -ne 0 && echo "cleaning up"
