@@ -34,3 +34,20 @@ else
   echo "Exported $TAG to $DIR"
 fi
 
+VENV="$DIR/venv"
+REQS="$VENV/requirements.txt"
+
+# set up the virtualenv
+if [ -a "$VENV" ]; then
+  virtualenv --distribute $VENV
+  source ./$VENV/bin/activate
+  pip install -r $REQS
+  if [ $? -ne 0 ]; then
+    echo "Error occured initializing virtualenv in $VENV"
+    exit 1
+  else
+    echo "Initialized virtualenv in $VENV"
+  fi
+else
+  echo "No virtualenv dir found; skipping initialization"
+fi
