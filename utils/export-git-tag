@@ -1,10 +1,16 @@
 #!/bin/bash
 
 REPO=""
+PROJECT_ENV_NAME=""
+PROJECT_DIRNAME=""
 
 if [ -z "$REPO" ]; then
   echo "Error: You need to edit this script to set the repository (REPO)"
+  echo "       and possibly the PROJECT_ENV_NAME and PROJECT_DIRNAME"
+  echo "       (if it's django project)"
   echo "   ex: REPO=\"git.cbxt.net:/var/git/bel.git\""
+  echo "       PROJECT_ENV_NAME=\"WELLDONE_ENV\""
+  echo "       PROJECT_DIRNAME=\"welldone\""
   exit 1
 fi
 
@@ -34,6 +40,7 @@ else
   echo "Exported $TAG to $DIR"
 fi
 
+
 VENV="$DIR/venv"
 REQS="$VENV/requirements.txt"
 
@@ -50,4 +57,22 @@ if [ -a "$VENV" ]; then
   fi
 else
   echo "No virtualenv dir found; skipping initialization"
+fi
+
+
+STATIC_DIR="$DIR/static"
+MANAGE_PY="$DIR/$PROJECT_DIRNAME/manage.py"
+
+# run collectstatic if appropriate
+if [[ -d "$STATIC_DIR" && "$(ls -A $STATIC_DIR)" == '.gitignore' ]]; then
+  # env doesn't maater, stage is safest (dev sometimes has extra debug apps)
+  $PROJECT_ENV_NAME=stage
+  CMD="$MANAGE_PY collectstatic --noinput"
+  $CMD
+  if [ $? -ne 0 ]; then
+    echo "Error occured running: $CMD"
+    exit 1
+  else
+    echo "Succesful: $CMD"
+  fi
 fi
