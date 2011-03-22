@@ -66,7 +66,7 @@ MANAGE_PY="$DIR/$PROJECT_DIRNAME/manage.py"
 # run collectstatic if appropriate
 if [[ -d "$STATIC_DIR" && "$(ls -A $STATIC_DIR)" == '.gitignore' ]]; then
   # env doesn't maater, stage is safest (dev sometimes has extra debug apps)
-  $PROJECT_ENV_NAME=stage
+  export $PROJECT_ENV_NAME=stage
   CMD="$MANAGE_PY collectstatic --noinput"
   $CMD
   if [ $? -ne 0 ]; then
