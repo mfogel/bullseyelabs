@@ -45,7 +45,7 @@ VENV="$DIR/venv"
 REQS="$VENV/requirements.txt"
 
 # set up the virtualenv
-if [ -a "$VENV" ]; then
+if [ -d "$VENV" ]; then
   virtualenv --distribute $VENV
   source ./$VENV/bin/activate
   pip install -r $REQS
@@ -67,12 +67,30 @@ MANAGE_PY="$DIR/$PROJECT_DIRNAME/manage.py"
 if [[ -d "$STATIC_DIR" && "$(ls -A $STATIC_DIR)" == '.gitignore' ]]; then
   # env doesn't maater, stage is safest (dev sometimes has extra debug apps)
   export $PROJECT_ENV_NAME=stage
-  CMD="$MANAGE_PY collectstatic --noinput"
+  CMD="$MANAGE_PY collectstatic --noinput -v 0"
   $CMD
   if [ $? -ne 0 ]; then
     echo "Error occured running: $CMD"
     exit 1
   else
     echo "Succesful: $CMD"
+  fi
+fi
+
+
+LOGS_DIR="$DIR/logs"
+LOGS_GROUP="www-data"
+
+# set the permissions on the logs dir if needed
+# user that runs this script must be part of LOGS_GROUP
+# do this last so that log files that are initialized in the cmds
+# above get set too
+if [ -d "$LOGS_DIR" ]; then
+  chgrp -R $LOGS_GROUP $LOGS_DIR && chmod g+ws $LOGS_DIR && chmod g+w $LOGS_DIR/*
+  if [ $? -ne 0 ]; then
+    echo "Error occured setting permissions on logs directory"
+    exit 1
+  else
+    echo "Set group logging permissions on logs dir"
   fi
 fi
