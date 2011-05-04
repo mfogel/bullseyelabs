@@ -1,5 +1,6 @@
 #!/bin/sh
 # to be invoked by rsnapshot
+# user this script runs as needs passwordless ssh to remote host
 # use to dump & backup a series of mysql db's matching a sql LIKE pattern
 
 USAGE="$0 <remote host> <database name sql LIKE clause>"
@@ -16,7 +17,6 @@ DUMP_EXT="mysqldump"
 
 SSH_BIN="/usr/bin/ssh"
 RSYNC_BIN="/usr/bin/rsync -az -e $SSH_BIN"
-MKDIR_BIN="/bin/mkdir -p"
 MYSQL_BIN="/usr/bin/mysql --skip-column-names"
 MYSQLDUMP_BIN="/usr/bin/mysqldump"
 
