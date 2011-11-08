@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>#sfmayor 2011</title>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script type="text/javascript" src="sfmayor.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    var controller = new sfmayor.Controller();
+});
+</script>
+</head>
+</body>
+<div id="shell">
+<h2>Who should I vote for <a href="https://twitter.com/#!/search?q=%23sfmayor">#sfmayor?</a></h2>
+
+<form id="questionaire">
+<table>
+
+<thead>
+<tr><td>Ballot Props &amp; City Policy</td><td>Support?</td><td>Importance?</td></tr>
+</thead>
+
+<tbody id="questionaire_body">
+</tbody>
+
+</table>
+
+<input type="submit" value="Calculate!"></input>
+</form>
+
+</body>
+</html>
