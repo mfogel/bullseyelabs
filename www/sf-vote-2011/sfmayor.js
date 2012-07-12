@@ -1,31 +1,39 @@
 
 if (typeof(window.sfmayor) === 'undefined') var sfmayor = {};
 
+
 sfmayor.Question = function(id, text) {
     this.id = id;
     this.text = text;
-    this.support = 0; // -1, 0, 1
-    this.importance = 0; // 0/1/2/4/8
 };
 var Question = sfmayor.Question;
 
-sfmayor.Canidate = function(id, name) {
+
+sfmayor.Responder = function(id, name) {
     this.id = id;
     this.name = name;
-    this.responses = {}; // question_id -> support
+    this.responses = {}; // question_id -> [support, importance]
+    this._correlations = {};
 };
-var Canidate = sfmayor.Canidate;
+var Responder = sfmayor.Responder;
 
-Canidate.prototype.response_add = function(question, support) {
-    this.responses[question.id] = support;
+Responder.prototype.response_add = function(question, support, improtance) {
+    if (typeof(importance) === 'undefined') importance = 1;
+    this.responses[question.id] = [support, importance]
 }
 
-sfmayor.UserResponse = function(question, support, importance) {
-    this.question = question;
-    this.support = support;
-    this.importance = importance;
+Responder.prototype.correlation_to = function(other_responder) {
+    if (! (other_responder.id in this._correlations)) {
+        var correlation = 0;
+        $.each(this.responses, function(question_id, pair) {
+            var other_pair = other_responder.responses[question_id];
+            correlation += pair[0] * other_pair[0] * pair[1];
+        });
+        this._correlations[other_responder.id] = correlation;
+    }
+    return this._correlations[other_responder.id]
 };
-var UserResponse = sfmayor.UserResponse;
+
 
 /* data */
 sfmayor.QUESTIONS = [
@@ -99,8 +107,10 @@ sfmayor.RESPONSES = [ // question->row, canidate -> column
 
 sfmayor.Controller = function() {
     /* init our datastructures */
+    this.user = new Responder();
     this._init_datastructures();
     this._init_html_form();
+    $('#questionaire').on('submit', $.proxy(this._handle_form_submit, this));
 };
 var Controller = sfmayor.Controller;
 
@@ -109,7 +119,7 @@ Controller.prototype._init_datastructures = function() {
     var questions = [];
 
     $.each(sfmayor.CANIDATES, function(i, name) {
-        canidates.push(new Canidate(i, name));
+        canidates.push(new Responder(i, name));
     });
     $.each(sfmayor.QUESTIONS, function(i, text) {
         questions.push(new Question(i, text));
@@ -148,8 +158,37 @@ Controller.prototype._init_html_form = function() {
     
         html += '</tr>';
 
-        $tr = $(html);
+        var $tr = $(html);
         $tbody.append($tr);
     });
 };
 
+Controller.prototype._handle_form_submit = function(evt) {
+    //console.log('form submit');
+    evt.preventDefault();
+
+    $.each(this.questions, $.proxy(function(i, question) {
+        var s = $('input:radio[name=support-'+question.id+']:checked').val();
+        var i = $('input:radio[name=importance-'+question.id+']:checked').val();
+        this.user.response_add(question.id, parseInt(s), parseInt(i));
+    }, this));
+
+    var compare_canidates = $.proxy(function(cand1, cand2) {
+        return this.user.correlation_to(cand1) - this.user.correlation_to(cand2);
+    }, this);
+
+    this.canidates.sort(compare_canidates);
+    this._display_results();
+};
+
+Controller.prototype._display_results = function() {
+    var $results_ul = $('#results ul');
+    $results_ul.empty();
+
+    $.each(this.canidates, $.proxy(function(i, canidate) {
+        var html = '<li>'
+        html += canidate.name + ': ' + this.user.correlation_to(canidate);
+        html += '</li>';
+        $results_ul.append($(html))
+    }, this));
+};
